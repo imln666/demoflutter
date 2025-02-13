@@ -1,28 +1,98 @@
+import 'package:demoflutter/src/settings/appearance_dialog.dart';
+import 'package:demoflutter/src/settings/appearance_options.dart';
+import 'package:demoflutter/store/actions/actions.dart';
+import 'package:demoflutter/store/state/state.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import '../store/store.dart';
 import 'settings/settings_controller.dart';
 
+class _ViewModel {
+  final User? user;
+  final Brightness themeMode;
+  final String language;
+  final Function(User) onUpdateUser;
+  final Function(ThemeMode) onToggleTheme;
+  final Function(String) onChangeLanguage;
 
-class MyApp extends StatelessWidget {
-  const MyApp({
-    super.key,
-    required this.settingsController,
+  _ViewModel({
+    required this.user,
+    required this.themeMode,
+    required this.language,
+    required this.onUpdateUser,
+    required this.onToggleTheme,
+    required this.onChangeLanguage,
   });
+}
 
+class _ThemeViewModel {
+  final ThemeMode themeMode;
+  final Function(ThemeMode) onToggleTheme;
+
+  _ThemeViewModel({
+    required this.themeMode,
+    required this.onToggleTheme,
+  });
+}
+
+class MyApp extends StatefulWidget {
   final SettingsController settingsController;
+  const MyApp({super.key, required this.settingsController});
 
   @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: settingsController,
-      builder: (BuildContext context, Widget? child) {
-        return CupertinoApp(
-          theme: CupertinoThemeData(brightness: Brightness.light),
-          home: HomePage(),
-          debugShowCheckedModeBanner: false,
-        );
+  State<MyApp> createState() => _MyAppState();
+}
 
-      },
-    );
+int _currentAppearance = 0;
+
+class _MyAppState extends State<MyApp> {
+  @override
+  Widget build(BuildContext context) {
+    return StoreProvider<AppState>(
+        store: store,
+        child: StoreConnector<AppState, _ViewModel>(builder: (context, vm) {
+          return ListenableBuilder(
+            listenable: widget.settingsController,
+            builder: (BuildContext context, Widget? child) {
+              return CupertinoApp(
+                theme: CupertinoThemeData(
+                  scaffoldBackgroundColor: Color.fromRGBO(248, 248, 248, 1),
+                  brightness: vm.themeMode,
+                  primaryColor: vm.themeMode == Brightness.dark
+                      ? CupertinoColors.white
+                      : CupertinoColors.black,
+                  barBackgroundColor: vm.themeMode == Brightness.dark
+                      ? CupertinoColors.white
+                      : CupertinoColors.black,
+                ),
+                home: HomePage(),
+                debugShowCheckedModeBanner: false,
+              );
+            },
+          );
+        }, converter: (store) {
+          Brightness brightness;
+          switch (store.state.themeMode) {
+            case ThemeMode.system:
+              brightness = MediaQuery.of(context).platformBrightness;
+              break;
+            case ThemeMode.light:
+              brightness = Brightness.light;
+              break;
+            case ThemeMode.dark:
+              brightness = Brightness.dark;
+              break;
+          }
+          return _ViewModel(
+              user: store.state.user,
+              themeMode: brightness,
+              language: store.state.language,
+              onUpdateUser: (user) => store.dispatch(UpdateUserAction(user)),
+              onToggleTheme: (themeMode) =>
+                  store.dispatch(ToggleThemeModeAction(themeMode)),
+              onChangeLanguage: (language) => ChangeLanguageAction(language));
+        }));
   }
 }
 
@@ -38,14 +108,18 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return CupertinoTabScaffold(
       tabBar: CupertinoTabBar(
+        currentIndex: 2,
         items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(CupertinoIcons.star_circle), label: 'Favorites'),
-          BottomNavigationBarItem(icon: Icon(CupertinoIcons.clock), label: 'Recent'),
-          BottomNavigationBarItem(icon: Icon(CupertinoIcons.settings), label: '设置')
+          BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.star_circle), label: 'Favorites'),
+          BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.clock), label: 'Recent'),
+          BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.settings), label: '设置')
         ],
       ),
       tabBuilder: (BuildContext context, int index) {
-        switch(index) {
+        switch (index) {
           case 0:
             return CupertinoTabView(
               builder: (context) {
@@ -72,24 +146,125 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-
-class SettingPage extends StatelessWidget {
+class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
+
+  @override
+  State<SettingPage> createState() => _SettingPageState();
+}
+
+class _SettingPageState extends State<SettingPage> {
+  void _showDialog() {
+    showCupertinoModalPopup(
+        context: context,
+        builder: (BuildContext content) {
+          return StoreConnector<AppState, _ThemeViewModel>(
+              builder: (context, vm) {
+                return Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: 216,
+                  padding: EdgeInsets.only(top: 6.0),
+                  margin: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom),
+                  color: CupertinoColors.systemBackground.resolveFrom(context),
+                  child: SafeArea(
+                      top: false,
+                      child: AppearanceDialog(
+                        defaultAppearance: _currentAppearance,
+                        onAppearanceSelected: (selectedAppearance) {
+                          setState(() {
+                            _currentAppearance = selectedAppearance;
+                            vm.onToggleTheme(selectedAppearance == 1
+                                ? ThemeMode.light
+                                : ThemeMode.dark);
+                          });
+                        },
+                      )),
+                );
+              },
+              converter: (store) => _ThemeViewModel(
+                  themeMode: store.state.themeMode,
+                  onToggleTheme: (themeMode) =>
+                      store.dispatch(ToggleThemeModeAction(themeMode))));
+        });
+  }
 
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text('setting'),
-      ),
-      child: Center(
-        child: CupertinoButton(child: Text('Go to setting detail'), onPressed: () {
-          Navigator.of(context).push(
-            CupertinoPageRoute(builder: (context) => HomeDetailPage())
-          );
-        }),
-      ),
-    );
+        child: Container(
+      padding: EdgeInsets.all(16),
+      child: ListView(children: [
+        Container(
+          decoration: BoxDecoration(
+            color: CupertinoColors.white,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            children: [
+              CupertinoListTile(
+                title: Text('功能'),
+                leading: Icon(CupertinoIcons.circle_grid_3x3),
+                trailing: CupertinoListTileChevron(),
+              ),
+              CupertinoListTile(
+                title: Text('语言'),
+                leading: Icon(CupertinoIcons.globe),
+                additionalInfo: Text('简体中文', style: TextStyle(fontSize: 13)),
+                trailing: CupertinoListTileChevron(),
+                onTap: () => Navigator.of(context).push(
+                    CupertinoPageRoute(builder: (context) => HomeDetailPage())),
+              ),
+              CupertinoListTile(
+                  title: Text('外观'),
+                  additionalInfo: Text(
+                    appearances[_currentAppearance],
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  leading: Icon(CupertinoIcons.circle_lefthalf_fill),
+                  trailing: CupertinoListTileChevron(),
+                  onTap: () => _showDialog())
+            ],
+          ),
+        ),
+        Container(
+          margin: EdgeInsets.only(top: 20),
+          decoration: BoxDecoration(
+            color: CupertinoColors.white,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            children: [
+              CupertinoListTile(
+                title: Text('帮助中心'),
+                leading: Icon(CupertinoIcons.equal_square),
+                trailing: CupertinoListTileChevron(),
+              ),
+              CupertinoListTile(
+                title: Text('问题反馈'),
+                leading: Icon(CupertinoIcons.text_bubble),
+                trailing: CupertinoListTileChevron(),
+              ),
+              CupertinoListTile(
+                title: Text('推荐给好友'),
+                leading: Icon(CupertinoIcons.share),
+                trailing: CupertinoListTileChevron(),
+                onTap: () => Navigator.of(context).push(
+                    CupertinoPageRoute(builder: (context) => HomeDetailPage())),
+              )
+            ],
+          ),
+        ),
+        Center(
+          child: CupertinoButton(
+              child: Text('Go to setting detail'),
+              onPressed: () {
+                Navigator.of(context).push(
+                    CupertinoPageRoute(builder: (context) => HomeDetailPage()));
+              }),
+        ),
+      ]),
+    ));
   }
 }
 
@@ -103,11 +278,12 @@ class HomeDetailPage extends StatelessWidget {
         middle: Text('Setting detail page'),
       ),
       child: Center(
-        child: CupertinoButton(child: Text('Go back'), onPressed: () {
-          Navigator.of(context).pop();
-        }),
+        child: CupertinoButton(
+            child: Text('Go back'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            }),
       ),
     );
   }
 }
-
