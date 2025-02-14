@@ -7,4 +7,4 @@ import 'package:redux/redux.dart';
 
 final store = Store<AppState>(appReducer,
     initialState:
-        AppState(user: null, themeMode: ThemeMode.system, language: 'cn'));
+        AppState(user: null, themeMode: Brightness.light, language: 'cn'));

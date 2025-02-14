@@ -9,7 +9,7 @@ class UpdateUserAction {
 }
 
 class ToggleThemeModeAction {
-  final ThemeMode themeMode;
+  final Brightness themeMode;
   ToggleThemeModeAction(this.themeMode);
 }
 

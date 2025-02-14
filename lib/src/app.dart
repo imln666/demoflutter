@@ -1,3 +1,4 @@
+import 'package:demoflutter/src/closet/closet_view.dart';
 import 'package:demoflutter/src/settings/appearance_dialog.dart';
 import 'package:demoflutter/src/settings/appearance_options.dart';
 import 'package:demoflutter/store/actions/actions.dart';
@@ -13,7 +14,7 @@ class _ViewModel {
   final Brightness themeMode;
   final String language;
   final Function(User) onUpdateUser;
-  final Function(ThemeMode) onToggleTheme;
+  final Function(Brightness) onToggleTheme;
   final Function(String) onChangeLanguage;
 
   _ViewModel({
@@ -27,8 +28,8 @@ class _ViewModel {
 }
 
 class _ThemeViewModel {
-  final ThemeMode themeMode;
-  final Function(ThemeMode) onToggleTheme;
+  final Brightness themeMode;
+  final Function(Brightness) onToggleTheme;
 
   _ThemeViewModel({
     required this.themeMode,
@@ -57,12 +58,12 @@ class _MyAppState extends State<MyApp> {
             builder: (BuildContext context, Widget? child) {
               return CupertinoApp(
                 theme: CupertinoThemeData(
-                  scaffoldBackgroundColor: Color.fromRGBO(248, 248, 248, 1),
+                  applyThemeToAll: true,
+                  scaffoldBackgroundColor: vm.themeMode == Brightness.dark
+                      ? Color.fromRGBO(40, 40, 40, 1)
+                      : Color.fromRGBO(248, 248, 248, 1) ,
                   brightness: vm.themeMode,
                   primaryColor: vm.themeMode == Brightness.dark
-                      ? CupertinoColors.white
-                      : CupertinoColors.black,
-                  barBackgroundColor: vm.themeMode == Brightness.dark
                       ? CupertinoColors.white
                       : CupertinoColors.black,
                 ),
@@ -72,21 +73,9 @@ class _MyAppState extends State<MyApp> {
             },
           );
         }, converter: (store) {
-          Brightness brightness;
-          switch (store.state.themeMode) {
-            case ThemeMode.system:
-              brightness = MediaQuery.of(context).platformBrightness;
-              break;
-            case ThemeMode.light:
-              brightness = Brightness.light;
-              break;
-            case ThemeMode.dark:
-              brightness = Brightness.dark;
-              break;
-          }
           return _ViewModel(
               user: store.state.user,
-              themeMode: brightness,
+              themeMode: store.state.themeMode,
               language: store.state.language,
               onUpdateUser: (user) => store.dispatch(UpdateUserAction(user)),
               onToggleTheme: (themeMode) =>
@@ -123,7 +112,7 @@ class _HomePageState extends State<HomePage> {
           case 0:
             return CupertinoTabView(
               builder: (context) {
-                return Text('Favorites');
+                return ClosetView();
               },
             );
           case 1:
@@ -175,8 +164,8 @@ class _SettingPageState extends State<SettingPage> {
                           setState(() {
                             _currentAppearance = selectedAppearance;
                             vm.onToggleTheme(selectedAppearance == 1
-                                ? ThemeMode.light
-                                : ThemeMode.dark);
+                                ? Brightness.light
+                                : Brightness.dark);
                           });
                         },
                       )),
@@ -197,7 +186,7 @@ class _SettingPageState extends State<SettingPage> {
       child: ListView(children: [
         Container(
           decoration: BoxDecoration(
-            color: CupertinoColors.white,
+            color: CupertinoColors.systemBackground.resolveFrom(context),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Column(
@@ -230,7 +219,7 @@ class _SettingPageState extends State<SettingPage> {
         Container(
           margin: EdgeInsets.only(top: 20),
           decoration: BoxDecoration(
-            color: CupertinoColors.white,
+            color: CupertinoColors.systemBackground.resolveFrom(context),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Column(

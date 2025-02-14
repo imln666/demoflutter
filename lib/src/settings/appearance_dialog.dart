@@ -28,7 +28,6 @@ class _AppearanceDialogState extends State<AppearanceDialog> {
     return Column(
       children: [
         SizedBox(
-          height: 20,
           child: Text('外观'),
         ),
         Column(
