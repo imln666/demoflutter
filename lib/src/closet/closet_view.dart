@@ -56,6 +56,8 @@ Widget _buildItemCard(
                 children: [
                   Text(
                     title,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Padding(
@@ -79,7 +81,7 @@ Widget _buildItemCard(
                       // height: double.infinity,
                       child: Center(
                         child: Icon(
-                          Icons.add,
+                          CupertinoIcons.add,
                           size: 32,
                         ),
                       ),
