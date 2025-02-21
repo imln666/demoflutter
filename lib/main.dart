@@ -1,8 +1,12 @@
+import 'package:camera/camera.dart';
+import 'package:demoflutter/getX/common.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import 'src/app.dart';
 import 'src/settings/settings_controller.dart';
 import 'src/settings/settings_service.dart';
+List<CameraDescription> cameras = [];
 
 void main() async {
   // Set up the SettingsController, which will glue user settings to multiple
@@ -13,6 +17,11 @@ void main() async {
   // This prevents a sudden theme change when the app is first displayed.
   await settingsController.loadSettings();
 
+  Get.put(CommonController());
+  WidgetsFlutterBinding.ensureInitialized();
+  cameras = await availableCameras();
+  Get.find<CommonController>().setCameras(cameras);
+  print(cameras);
   // Run the app and pass in the SettingsController. The app listens to the
   // SettingsController for changes, then passes it further down to the
   // SettingsView.

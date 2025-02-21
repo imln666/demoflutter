@@ -30,7 +30,7 @@ class _ClosetViewState extends State<ClosetView> {
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10),
               ),
-              FloatButton()
+              FloatButton(),
             ],
     )));
   }

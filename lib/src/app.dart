@@ -6,6 +6,7 @@ import 'package:demoflutter/store/state/state.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:get/get.dart';
 import '../store/store.dart';
 import 'settings/settings_controller.dart';
 
@@ -56,7 +57,7 @@ class _MyAppState extends State<MyApp> {
           return ListenableBuilder(
             listenable: widget.settingsController,
             builder: (BuildContext context, Widget? child) {
-              return CupertinoApp(
+              return GetCupertinoApp(
                 theme: CupertinoThemeData(
                   applyThemeToAll: true,
                   scaffoldBackgroundColor: vm.themeMode == Brightness.dark
